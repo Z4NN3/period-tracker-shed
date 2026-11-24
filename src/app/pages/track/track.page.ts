@@ -727,6 +727,10 @@ export class TrackPage {
         notes: this.periodNotes
       };
 
+      if (Array.from(data.notes.trim()).length > 2000) {
+        throw new Error('Notes must be at most 2000 characters.');
+      }
+
       const editing =
         this.periodEditingId !== null;
 
@@ -763,8 +767,8 @@ export class TrackPage {
 
       await this.showToast(
         editing
-          ? 'Period record updated.'
-          : 'Period record saved.'
+          ? 'Period record updated on device.'
+          : 'Period record saved on device.'
       );
 
     } catch (error) {
@@ -834,10 +838,8 @@ export class TrackPage {
 
       this.periodService.deleteRecord(id);
 
-      // For an unsynced creation this removes
-      // its journal entry.
-      // For a mapped server record it keeps a
-      // pending deletion tombstone.
+      // Cancel an unsent creation or retain a deletion tombstone
+      // if the record may already exist on the server.
       await this.registerDeleteForSync(
         'period',
         id
@@ -851,7 +853,7 @@ export class TrackPage {
       this.cdr.markForCheck();
 
       await this.showToast(
-        'Period record deleted.'
+        'Period record deleted on device.'
       );
 
     } catch (error) {
@@ -906,6 +908,10 @@ export class TrackPage {
         notes: this.wellnessNotes
       };
 
+      if (Array.from(data.notes.trim()).length > 2000) {
+        throw new Error('Notes must be at most 2000 characters.');
+      }
+
       const editing =
         this.wellnessEditingId !== null;
 
@@ -942,8 +948,8 @@ export class TrackPage {
 
       await this.showToast(
         editing
-          ? 'Wellness entry updated.'
-          : 'Wellness entry saved.'
+          ? 'Wellness entry updated on device.'
+          : 'Wellness entry saved on device.'
       );
 
     } catch (error) {
@@ -1029,7 +1035,7 @@ export class TrackPage {
       this.cdr.markForCheck();
 
       await this.showToast(
-        'Wellness entry deleted.'
+        'Wellness entry deleted on device.'
       );
 
     } catch (error) {

@@ -22,6 +22,7 @@ export interface SyncJournalEntry {
   action: SyncAction;
   status: SyncStatus;
   updatedAt: string;
+  createAttempted?: boolean;
 }
 
 interface StoredJournal {
@@ -75,7 +76,7 @@ export class SyncJournalService {
   // ========================================
 
   private storageKey(userId: number): string {
-    return `${this.storagePrefix}.${userId}.v1`;
+    return `${this.storagePrefix}.${userId}.rest-v2`;
   }
 
   private requireAccount(): number {
@@ -158,7 +159,8 @@ export class SyncJournalService {
       ['pending', 'synced', 'conflict'].includes(
         entry.status
       ) &&
-      typeof entry.updatedAt === 'string'
+      typeof entry.updatedAt === 'string' &&
+      (entry.createAttempted === undefined || typeof entry.createAttempted === 'boolean')
     );
   }
 
@@ -251,22 +253,21 @@ export class SyncJournalService {
       return existing;
     }
 
-    if (
-      typeof crypto === 'undefined' ||
-      typeof crypto.randomUUID !== 'function'
-    ) {
-      throw new Error(
-        'Secure UUID generation is unavailable.'
-      );
-    }
+    // getRandomValues works on local HTTP origins too.
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 15) | 64;
+    bytes[8] = (bytes[8] & 63) | 128;
+    const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+    const uuid = `${hex.slice(0,8)}-${hex.slice(8,12)}-${hex.slice(12,16)}-${hex.slice(16,20)}-${hex.slice(20)}`;
 
     const entry: SyncJournalEntry = {
       recordType,
       localId,
-      clientRecordId: crypto.randomUUID(),
+      clientRecordId: uuid,
       serverId: null,
       action: 'create',
       status: 'pending',
+      createAttempted: false,
       updatedAt: new Date().toISOString()
     };
 
@@ -276,6 +277,18 @@ export class SyncJournalService {
     ]);
 
     return { ...entry };
+  }
+
+  // Persist evidence of an attempted POST BEFORE sending it. A lost
+  // response must not make a later explicit deletion forget this UUID.
+  markCreateAttempted(recordType: SyncRecordType, localId: number): void {
+    const entries = this.getEntries();
+    const entry = entries.find(item => item.recordType === recordType && item.localId === localId);
+    if (!entry) throw new Error('Sync journal entry not found.');
+    if (entry.createAttempted === true) return;
+    entry.createAttempted = true;
+    // This is transport metadata, not a new user edit; retain the revision.
+    this.saveEntries(entries);
   }
 
   // ========================================
@@ -405,13 +418,9 @@ export class SyncJournalService {
       );
     }
 
-    if (existing.serverId === null) {
-
-      // Current phase has no running auto-sync.
-      // This unsynced creation can be removed
-      // from the queue instead of uploading.
+    // A create that was never sent can safely be cancelled locally.
+    if (existing.serverId === null && existing.createAttempted === false) {
       this.removeEntry(recordType, localId);
-
       return;
     }
 
@@ -511,11 +520,10 @@ export class SyncJournalService {
 
     if (
       !existing ||
-      existing.action !== 'delete' ||
-      existing.serverId === null
+      existing.action !== 'delete'
     ) {
       throw new Error(
-        'No mapped server deletion to complete.'
+        'No pending server deletion to complete.'
       );
     }
 
@@ -576,7 +584,7 @@ export class SyncJournalService {
         changes.action ?? entries[index].action,
       status:
         changes.status ?? entries[index].status,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date(Math.max(Date.now(), Date.parse(entries[index].updatedAt) + 1 || 0)).toISOString()
     };
 
     entries[index] = updated;

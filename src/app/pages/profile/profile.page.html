@@ -400,15 +400,18 @@
                   Current Password
                 </label>
 
-                <input
+                <div class="shed-password-field">
+<input
                   id="email-current-password"
                   name="emailCurrentPassword"
                   class="profile-input"
-                  type="password"
+                  [type]="showEmailPassword ? 'text' : 'password'"
                   autocomplete="current-password"
                   required
                   [(ngModel)]="emailCurrentPassword"
                   placeholder="Enter current password">
+<button type="button" class="shed-password-toggle" [attr.aria-label]="showEmailPassword ? 'Hide password' : 'Show password'" [attr.aria-pressed]="showEmailPassword" (click)="showEmailPassword = !showEmailPassword"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>@if (showEmailPassword) {<path d="M3 3l18 18"/>}</svg></button>
+</div>
               </div>
 
               <div class="settings-form-actions">
@@ -470,15 +473,18 @@
                   Current Password
                 </label>
 
-                <input
+                <div class="shed-password-field">
+<input
                   id="password-current"
                   name="currentPassword"
                   class="profile-input"
-                  type="password"
+                  [type]="showCurrentPassword ? 'text' : 'password'"
                   autocomplete="current-password"
                   required
                   [(ngModel)]="currentPassword"
                   placeholder="Current password">
+<button type="button" class="shed-password-toggle" [attr.aria-label]="showCurrentPassword ? 'Hide password' : 'Show password'" [attr.aria-pressed]="showCurrentPassword" (click)="showCurrentPassword = !showCurrentPassword"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>@if (showCurrentPassword) {<path d="M3 3l18 18"/>}</svg></button>
+</div>
               </div>
 
               <div class="field">
@@ -486,17 +492,20 @@
                   New Password
                 </label>
 
-                <input
+                <div class="shed-password-field">
+<input
                   id="password-new"
                   name="newPassword"
                   class="profile-input"
-                  type="password"
+                  [type]="showNewPassword ? 'text' : 'password'"
                   autocomplete="new-password"
                   minlength="12"
                   maxlength="128"
                   required
                   [(ngModel)]="newPassword"
                   placeholder="New password">
+<button type="button" class="shed-password-toggle" [attr.aria-label]="showNewPassword ? 'Hide password' : 'Show password'" [attr.aria-pressed]="showNewPassword" (click)="showNewPassword = !showNewPassword"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>@if (showNewPassword) {<path d="M3 3l18 18"/>}</svg></button>
+</div>
 
                 <small>
                   Use at least 12 characters.
@@ -508,17 +517,20 @@
                   Confirm New Password
                 </label>
 
-                <input
+                <div class="shed-password-field">
+<input
                   id="password-confirm"
                   name="confirmPassword"
                   class="profile-input"
-                  type="password"
+                  [type]="showConfirmPassword ? 'text' : 'password'"
                   autocomplete="new-password"
                   minlength="12"
                   maxlength="128"
                   required
                   [(ngModel)]="confirmPassword"
                   placeholder="Repeat new password">
+<button type="button" class="shed-password-toggle" [attr.aria-label]="showConfirmPassword ? 'Hide password' : 'Show password'" [attr.aria-pressed]="showConfirmPassword" (click)="showConfirmPassword = !showConfirmPassword"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>@if (showConfirmPassword) {<path d="M3 3l18 18"/>}</svg></button>
+</div>
               </div>
 
               <div class="settings-form-actions">

@@ -227,6 +227,20 @@ export class ShedApiService {
   // API URL FOR BROWSER AND APK
   // ========================================
 
+  getNativeServer(): string | null {
+    return this.nativeApiBaseUrl;
+  }
+
+  restoreNativeServer(server: string): boolean {
+    try {
+      const normalized = this.normalizeServerAddress(server);
+      if (normalized !== localStorage.getItem(this.serverStorageKey)) return false;
+      this.nativeApiBaseUrl = normalized;
+      this.nativeServerConfirmed = true;
+      return true;
+    } catch { return false; }
+  }
+
   private get apiUrl(): string {
 
     // Installed Android / iOS application:

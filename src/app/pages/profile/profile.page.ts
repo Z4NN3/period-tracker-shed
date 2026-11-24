@@ -149,6 +149,10 @@ export class ProfilePage implements OnInit, OnDestroy {
 
   newEmail = '';
   emailCurrentPassword = '';
+  showEmailPassword = false;
+  showCurrentPassword = false;
+  showNewPassword = false;
+  showConfirmPassword = false;
 
   currentPassword = '';
   newPassword = '';
@@ -991,6 +995,10 @@ export class ProfilePage implements OnInit, OnDestroy {
   // ========================================
 
   private clearSettingsState(): void {
+    this.showEmailPassword = false;
+    this.showCurrentPassword = false;
+    this.showNewPassword = false;
+    this.showConfirmPassword = false;
     this.activeSettingsForm = null;
 
     this.newEmail = '';

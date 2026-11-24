@@ -1,5 +1,8 @@
 
 import { Injectable } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Capacitor, registerPlugin } from '@capacitor/core';
+import { TimeoutError } from 'rxjs';
 
 import {
   BehaviorSubject,
@@ -15,6 +18,19 @@ import {
   ShedApiService,
   ShedUser
 } from './shed-api';
+
+interface SavedNativeSession {
+  token: string;
+  user: ShedUser;
+  expiresAt: number;
+  server: string;
+}
+const secureSession = registerPlugin<{
+  platformInfo(): Promise<{sdk: number}>;
+  save(options: {value: string}): Promise<void>;
+  load(): Promise<{value?: string}>;
+  clear(): Promise<void>;
+}>('ShedSession');
 
 @Injectable({
   providedIn: 'root'
@@ -33,6 +49,8 @@ export class AuthService {
     this.userSubject.asObservable();
 
   private initialized = false;
+  private nativeSession: SavedNativeSession | null = null;
+  private get isAndroid(): boolean { return Capacitor.getPlatform() === 'android'; }
 
   get currentUser(): ShedUser | null {
     return this.userSubject.value;
@@ -56,7 +74,29 @@ export class AuthService {
 
     this.initialized = true;
 
-    const token = this.readSessionToken();
+    let token: string | null = null;
+    if (this.isAndroid) {
+      try {
+        const { sdk } = await secureSession.platformInfo();
+        if (sdk < 35) document.documentElement.classList.add("shed-legacy-android");
+        const { value } = await secureSession.load();
+        if (!value) return;
+        const saved = JSON.parse(value) as SavedNativeSession;
+        if (!this.validToken(saved.token) || !this.validUser(saved.user) ||
+            !Number.isFinite(saved.expiresAt) || saved.expiresAt <= Date.now() ||
+            !this.api.restoreNativeServer(saved.server)) {
+          await this.clearLocalSession();
+          return;
+        }
+        this.nativeSession = saved;
+        token = saved.token;
+      } catch {
+        try { await this.clearLocalSession(); } catch { /* fail closed */ }
+        return;
+      }
+    } else {
+      token = this.readSessionToken();
+    }
 
     if (!token) {
       return;
@@ -75,15 +115,26 @@ export class AuthService {
 
       if (
         !response.success ||
-        !this.validUser(response.user)
+        !this.validUser(response.user) ||
+        (this.nativeSession !== null && response.user.id !== this.nativeSession.user.id)
       ) {
         throw new Error('Invalid saved session.');
       }
 
+      if (this.nativeSession) {
+        this.nativeSession.user = response.user;
+        await secureSession.save({value: JSON.stringify(this.nativeSession)});
+      }
       this.activateAccount(response.user);
 
-    } catch {
-      this.clearLocalSession();
+    } catch (error) {
+      const offline = error instanceof TimeoutError ||
+        (error instanceof HttpErrorResponse && error.status === 0);
+      if (offline && this.nativeSession && this.nativeSession.expiresAt > Date.now()) {
+        this.activateAccount(this.nativeSession.user);
+      } else {
+        await this.clearLocalSession();
+      }
     }
   }
 
@@ -96,7 +147,7 @@ export class AuthService {
     password: string
   ): Promise<ShedUser> {
 
-    this.clearLocalSession();
+    await this.clearLocalSession();
 
     try {
       const response = await firstValueFrom(
@@ -125,14 +176,24 @@ export class AuthService {
         );
       }
 
-      this.saveSessionToken(token);
+      if (this.isAndroid) {
+        const server = this.api.getNativeServer();
+        if (!server || !Number.isFinite(response.expiresIn) || response.expiresIn <= 0) {
+          throw new Error('Invalid session expiry or server.');
+        }
+        this.nativeSession = { token, user: response.user,
+          expiresAt: Date.now() + response.expiresIn * 1000, server };
+        await secureSession.save({value: JSON.stringify(this.nativeSession)});
+      } else {
+        this.saveSessionToken(token);
+      }
 
       this.activateAccount(response.user);
 
       return response.user;
 
     } catch (error) {
-      this.clearLocalSession();
+      await this.clearLocalSession();
       throw error;
     }
   }
@@ -177,6 +238,10 @@ export class AuthService {
 
     // Preserve the current records, Sync Journal,
     // and account-specific profile.
+    if (this.nativeSession) {
+      this.nativeSession.user = response.user;
+      await secureSession.save({value: JSON.stringify(this.nativeSession)});
+    }
     this.userSubject.next(response.user);
 
     return response.user;
@@ -200,7 +265,7 @@ export class AuthService {
       // Local logout must still proceed.
     }
 
-    this.clearLocalSession();
+    await this.clearLocalSession();
 
     if (!remoteLogout) {
       return false;
@@ -244,10 +309,12 @@ export class AuthService {
     this.userSubject.next(null);
   }
 
-  private clearLocalSession(): void {
+  private async clearLocalSession(): Promise<void> {
     this.api.clearAccessToken();
     this.clearStoredToken();
     this.clearVisibleAccount();
+    this.nativeSession = null;
+    if (this.isAndroid) await secureSession.clear();
   }
 
   // ========================================

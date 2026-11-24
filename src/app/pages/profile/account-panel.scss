@@ -729,3 +729,10 @@
     font-size: 12px;
   }
 }
+
+@media (max-width: 480px) {
+  :host-context(.welcome-page) .account-form { gap: 12px; }
+  :host-context(.welcome-page) .account-tabs { margin-bottom: 12px; }
+  :host-context(.welcome-page) .account-field { gap: 5px; }
+  :host-context(.welcome-page) .account-field input { min-height: 46px; padding-top: 9px; padding-bottom: 9px; }
+}

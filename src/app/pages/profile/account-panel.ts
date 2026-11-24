@@ -49,6 +49,7 @@ export class AccountPanelComponent
   displayName = '';
   email = '';
   password = '';
+  showPassword = false;
 
   comparison: RecordComparison | null = null;
   isComparing = false;
@@ -119,6 +120,7 @@ export class AccountPanelComponent
 
     this.mode = mode;
     this.password = '';
+    this.showPassword = false;
     this.message = '';
     this.errorMessage = '';
     this.updateView();
@@ -178,11 +180,13 @@ export class AccountPanelComponent
       this.mode = 'login';
       this.email = email;
       this.password = '';
+    this.showPassword = false;
       this.message =
         'Account created! You can now log in.';
       this.errorMessage = '';
     } catch (error) {
       this.password = '';
+    this.showPassword = false;
       this.errorMessage = this.getErrorMessage(
         error,
         'Unable to create your account.'
@@ -213,11 +217,13 @@ export class AccountPanelComponent
     try {
       await this.auth.login(email, password);
       this.password = '';
+    this.showPassword = false;
       this.resetComparison();
       this.message = 'Login successful.';
       this.errorMessage = '';
     } catch (error) {
       this.password = '';
+    this.showPassword = false;
       this.errorMessage = this.getErrorMessage(
         error,
         'Unable to log in.'
@@ -246,6 +252,7 @@ export class AccountPanelComponent
       const revoked = await this.auth.logout();
 
       this.password = '';
+    this.showPassword = false;
       this.mode = 'login';
       this.resetComparison();
 

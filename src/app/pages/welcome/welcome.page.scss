@@ -11,8 +11,10 @@
 
 .welcome-page {
   width: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 
   padding: 8px 16px 24px;
 
@@ -31,7 +33,8 @@
   width: 100%;
   max-width: 470px;
 
-  margin: 0 auto;
+  margin: auto;
+  flex-shrink: 0;
 }
 
 .welcome-header {
@@ -164,3 +167,5 @@ app-shed-account-panel {
     padding-top: 35px;
   }
 }
+
+.welcome-page { padding-top: max(16px, var(--ion-safe-area-top, 0px)); padding-bottom: max(16px, var(--ion-safe-area-bottom, 0px)); }

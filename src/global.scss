@@ -296,18 +296,7 @@ ion-modal.shed-date-modal ion-datetime {
  * for older three-button navigation.
  */
 
-html.plt-capacitor.plt-android
-ion-tab-bar.shed-tab-bar {
-  padding-bottom: calc(
-    5px + max(
-      24px,
-      var(
-        --safe-area-inset-bottom,
-        env(safe-area-inset-bottom, 0px)
-      )
-    )
-  );
-}
+
 
 /* =========================================
    ACCESSIBILITY
@@ -326,3 +315,12 @@ ion-tab-bar.shed-tab-bar {
   }
 
 }
+
+/* Password visibility controls shared by authentication and settings. */
+.shed-password-field { position: relative; width: 100%; min-width: 0; }
+.shed-password-field input { width: 100%; padding-right: 52px !important; }
+.shed-password-toggle { position: absolute; inset-inline-end: 3px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 10px; background: transparent; color: #96607c; cursor: pointer; }
+.shed-password-toggle:focus-visible { outline: 2px solid var(--shed-rose); }
+
+/* Legacy Android uses native non-overlay system bars in this app. */
+html.shed-legacy-android { --ion-safe-area-top: 0px; --ion-safe-area-bottom: 0px; }

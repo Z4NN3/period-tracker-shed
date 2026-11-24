@@ -435,6 +435,20 @@ export class WellnessService {
     );
   }
 
+  // Refresh only a previously mapped record; retain its local ID.
+  // Never insert or delete historical entries during a server read.
+  applyServerRecord(localId: number, incoming: WellnessRecord): void {
+    const records = this.getRecords();
+    const current = records.find(record => record.id === localId);
+    if (!current) return;
+    const record = { ...incoming, id: localId };
+    if (this.filterValidRecords([record]).length !== 1) {
+      throw new Error('Invalid server record.');
+    }
+    if (JSON.stringify(current) === JSON.stringify(record)) return;
+    this.saveRecords(records.map(item => item.id === localId ? record : item));
+  }
+
   // ========================================
   // GENERATE UNIQUE NUMERIC ID
   // ========================================
